@@ -1,0 +1,38 @@
+<?php
+namespace gsnc\controllers\api;
+
+use common\controllers\ActiveController;
+use yii\data\ActiveDataProvider;
+use yii\web\Link;
+
+class MauncController extends ActiveController
+{
+    public $modelClass = 'gsnc\resources\MauncResource';
+
+    public function actionSearch(){
+        $searchModel = new $this->modelClass;
+        $dataProvider = $searchModel->search(request()->all());
+
+        $pagination = $dataProvider->getPagination();
+        $models = $dataProvider->getModels();
+        $items = collect($models)->map(function ($item) {
+            return $item->toArray([], ['geometry']);
+        });
+
+
+        $pjax_id = 'maudatnuoc-list';
+        $data = [
+            'pjax_id' => $pjax_id,
+            'items' => $items,
+            '_key'  => 'maunc',
+            '_meta' => [
+                'totalCount'  => $pagination->totalCount,
+                'pageCount'   => $pagination->getPageCount(),
+                'currentPage' => $pagination->getPage() + 1,
+                'perPage'     => $pagination->getPageSize(),
+            ],
+            '_link' => Link::serialize($pagination->getLinks()),
+        ];
+        return $this->renderAjax('index', compact('dataProvider', 'items', 'data'));
+    }
+}
